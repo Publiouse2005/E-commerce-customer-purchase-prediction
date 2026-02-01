@@ -1,0 +1,20 @@
+
+
+# Python
+__pycache__/
+*.pyc
+
+# Data & notebooks (never push)
+*.csv
+*.xlsx
+*.ipynb
+
+# Pickle files
+*.pkl
+!purchase_intent_model.pkl
+
+# Generated files
+predictions.csv
+
+# Environment
+.env
