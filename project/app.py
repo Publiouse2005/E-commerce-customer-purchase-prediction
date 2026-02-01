@@ -95,7 +95,7 @@ async def predict(request: Request):
     )
 
     input_df = input_df[MODEL_FEATURES]
-    probability = model.predict_proba(input_df)[:, 1][0]
+    probability = model.predict_proba(input_df, validate_features=False)[:, 1][0]
 
     if probability >= 0.7:
         intent = "High Intent"
@@ -160,7 +160,8 @@ async def predict_csv(request: Request, file: UploadFile = File(...)):
         df["engagement_score"] = df["pages_viewed"] * df["session_duration"]
 
         df = df[MODEL_FEATURES]
-        probabilities = model.predict_proba(df)[:, 1]
+        probabilities = model.predict_proba(df, validate_features=False)[:, 1]
+
     except Exception as e:
         return templates.TemplateResponse(
             "index.html",
