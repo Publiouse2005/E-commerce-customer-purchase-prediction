@@ -11,30 +11,22 @@ from fastapi.responses import Response
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 FEATURE_MAPPING = {
-    "pages_viewed": [
-        "pages_viewed",
-        "page_views",
-        "num_pages",
-        "views",
-        "Pages_Viewed",
-    ],
+    "pages_viewed": ["pages_viewed", "page_views", "num_pages", "views"],
     "cart_additions": ["cart_additions", "add_to_cart", "cart_events"],
-    "session_duration": [
-        "session_duration",
-        "time_spent",
-        "session_time",
-        "session_duration_sec",
-        "Session_Duration_Minutes",
-        "Is_Returning_Customer",
-    ],
+    "session_duration": ["session_duration", "time_spent", "session_time"],
     "past_purchase_count": ["past_purchase_count", "previous_orders", "order_count"],
-    "is_returning_user": [
-        "is_returning_user",
-        "returning",
-        "repeat_user",
-        "returning_user",
-    ],
+    "is_returning_user": ["is_returning_user", "returning", "repeat_user"],
 }
+
+MODEL_FEATURES = [
+    "pages_viewed",
+    "cart_additions",
+    "has_cart",
+    "session_duration",
+    "engagement_score",
+    "past_purchase_count",
+    "is_returning_user",
+]
 
 
 def map_company_columns(df, mapping):
@@ -102,6 +94,7 @@ async def predict(request: Request):
         ]
     )
 
+    input_df = input_df[MODEL_FEATURES]
     probability = model.predict_proba(input_df)[:, 1][0]
 
     if probability >= 0.7:
@@ -128,6 +121,9 @@ async def predict(request: Request):
 @app.post("/predict_csv", response_class=HTMLResponse)
 async def predict_csv(request: Request, file: UploadFile = File(...)):
     raw_df = pd.read_csv(file.file)
+
+    raw_df.columns = raw_df.columns.str.strip().str.lower().str.replace(" ", "_")
+
     if raw_df.empty:
         return templates.TemplateResponse(
             "index.html", {"request": request, "error": "Uploaded CSV is empty."}
@@ -163,17 +159,8 @@ async def predict_csv(request: Request, file: UploadFile = File(...)):
         df["has_cart"] = (df["cart_additions"] > 0).astype(int)
         df["engagement_score"] = df["pages_viewed"] * df["session_duration"]
 
-        model_features = [
-            "pages_viewed",
-            "cart_additions",
-            "has_cart",
-            "session_duration",
-            "engagement_score",
-            "past_purchase_count",
-            "is_returning_user",
-        ]
-
-        probabilities = model.predict_proba(df[model_features])[:, 1]
+        df = df[MODEL_FEATURES]
+        probabilities = model.predict_proba(df)[:, 1]
     except Exception as e:
         return templates.TemplateResponse(
             "index.html",
